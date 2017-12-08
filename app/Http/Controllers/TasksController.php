@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
-use App\Tasks;
+
+use App\Task;
 
 class TasksController extends Controller
 {
@@ -17,7 +18,8 @@ class TasksController extends Controller
      */
     public function index()
     {
-        $tasks = Tasks::all();
+        $user = \Auth::user();
+        $user-> tasks();
 
         return view('tasks.index', [
             'tasks' => $tasks,
@@ -30,7 +32,7 @@ class TasksController extends Controller
      */
     public function create()
     {
-        $task = new Tasks;
+        $task = new Task;
 
         return view('tasks.create', [
             'task' => $task,
@@ -50,10 +52,12 @@ class TasksController extends Controller
             'content' => 'required|max:255',
         ]);
         
-        $task = new Tasks;
-        $task->status = $request->status;
-        $task->content = $request->content;
-        $task->save();
+        $user = \Auth::user();
+        
+        $user->tasks()->create([
+            'status' => $request->status,
+            'content' => $request->content
+        ]);
 
         return redirect('/');
     }
@@ -66,7 +70,7 @@ class TasksController extends Controller
      */
     public function show($id)
     {
-        $task = Tasks::find($id);
+        $task = Task::find($id);
 
         return view('tasks.show', [
             'task' => $task,
@@ -81,7 +85,7 @@ class TasksController extends Controller
      */
     public function edit($id)
     {
-        $task = Tasks::find($id);
+        $task = Task::find($id);
 
         return view('tasks.edit', [
             'task' => $task,
@@ -102,7 +106,7 @@ class TasksController extends Controller
             'content' => 'required|max:255',
         ]);
         
-        $task = Tasks::find($id);
+        $task = Task::find($id);
         $task->status = $request->status;
         $task->content = $request->content;
         $task->save();
@@ -118,8 +122,11 @@ class TasksController extends Controller
      */
     public function destroy($id)
     {
-        $task = Tasks::find($id);
-        $task->delete();
+        $task = Task::find($id);
+    
+        if (\Auth::user()->id == $task->user_id) {
+            $task->delete();
+        }
 
         return redirect('/');
     }
